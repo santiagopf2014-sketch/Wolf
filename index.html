@@ -452,6 +452,35 @@
   box-shadow: var(--focus);
   border-radius: 16px;
 }
+
+/* Brand button: no border box on click, keep accessible focus ring */
+.brand{
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  box-shadow: none;
+}
+
+.brand:focus{
+  outline: none;
+  box-shadow: none;
+}
+
+/* Only show a nice focus ring for keyboard users */
+.brand:focus-visible{
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: 16px;
+}
+
+/* Keep gradient on hover for primary buttons */
+.btnPrimary:hover{
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+  color: #fff;
+}
+    
 </style>
 </head>
 
