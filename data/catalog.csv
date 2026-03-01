@@ -1,1 +1,9 @@
-
+id,title_en,title_fr,description_en,description_fr,image_filename,tags
+WOLF-001,Apple at the beach,Pomme à la plage,Apple at the beach,Pomme à la plage,WOLF-001_Apple_at_the_beach.jpg,apple|beach|pomme|plage
+WOLF-002,Hamster with hickey,Hamster avec suçon,Hamster with hickey,Hamster avec suçon,WOLF-002_Hamster_with_hickey.jpg,hamster|hickey|suçon
+WOLF-003,Just chill,Just chill,Just chill,Just chill,WOLF-003_Just_chill.jpg,chill|dog
+WOLF-004,Hamster with sunglasses on a skateboard,Hamster avec lunettes de soleil sur skate,Hamster with sunglasses on a skateboard,Hamster avec lunettes de soleil sur skate,WOLF-004_Hamster_with_sunglasses_on_a_skate_board.jpg,Hamster|on|a|basketball|court
+WOLF-005,Hamster with backpack,Hamster avec sac à dos,Hamster with backpack,Hamster avec sac à dos,WOLF-005_Hamster_with_backpack.jpg,hamster|backpack 
+WOLF-006,Candy and chocolate,Bonbons et chocolat,Candy and chocolate,Bonbons et chocolat,WOLF-006_Candy_and_chocolate.jpg,candy|chocolat|bonbons
+WOLF-007,"Trust me, I am a dogtor","Croyez-moi, je suis un dogtor","Trust me, I am a dogtor","Croyez-moi, je suis un dogtor",WOLF-007_Trust me_I_am_a_dogtor.jpg,dog|trustme
+WOLF-007,Who wants a hug?,Qui veut un calîn?,Who wants a hug?,Qui veut un calîn?,WOLF-008_Who_wants_a_hug.jgp,Who|wants|ahug
