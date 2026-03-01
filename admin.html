@@ -5,20 +5,44 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Wolf Admin</title>
   <style>
-    body{font-family:system-ui,Arial;margin:0;background:#0b1020;color:#f3f6ff}
-    .wrap{max-width:980px;margin:0 auto;padding:18px}
+    :root{
+      --bg:#0b1020; --card:rgba(255,255,255,.06); --line:rgba(255,255,255,.14);
+      --text:#f3f6ff; --muted:#b9c2ff; --good:rgba(140,255,193,.18);
+      --warn:rgba(255,210,107,.14); --bad:rgba(255,107,107,.14);
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,Arial;background:var(--bg);color:var(--text)}
+    a{color:var(--muted)}
+    .wrap{max-width:1050px;margin:0 auto;padding:18px}
     h1{margin:0 0 10px 0}
-    .card{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:14px;padding:14px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
-    textarea{width:100%;min-height:520px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#f3f6ff;padding:12px;font-size:13px}
-    input{border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#f3f6ff;padding:10px 12px;font-size:14px}
-    button{cursor:pointer;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#f3f6ff;padding:10px 12px;font-weight:750}
+    h2{margin:18px 0 10px 0;font-size:18px}
+    .card{border:1px solid var(--line);background:var(--card);border-radius:var(--radius);padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:720px){.row2{grid-template-columns:1fr}}
+    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    input,textarea,select{
+      width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.06);color:var(--text);padding:10px 12px;font-size:14px
+    }
+    textarea{min-height:70px;resize:vertical}
+    button{
+      cursor:pointer;border-radius:12px;border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.08);color:var(--text);padding:10px 12px;font-weight:750
+    }
     button:hover{background:rgba(255,255,255,.12)}
-    .note{border:1px solid rgba(140,255,193,.35);background:rgba(140,255,193,.10);border-radius:12px;padding:12px;font-size:13px;line-height:1.35}
-    .warn{border:1px solid rgba(255,210,107,.35);background:rgba(255,210,107,.12)}
-    .err{border:1px solid rgba(255,107,107,.35);background:rgba(255,107,107,.12)}
+    .btnPrimary{border-color:rgba(140,255,193,.35);background:rgba(140,255,193,.14)}
+    .btnDanger{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.12)}
+    .note{border:1px solid rgba(140,255,193,.35);background:var(--good);border-radius:12px;padding:12px;font-size:13px;line-height:1.35}
+    .note.warn{border-color:rgba(255,210,107,.35);background:var(--warn)}
+    .note.err{border-color:rgba(255,107,107,.35);background:var(--bad)}
     .hidden{display:none}
-    a{color:#b9c2ff}
+    .table{display:grid;gap:10px}
+    .itemRow{
+      border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.04)
+    }
+    .small{font-size:12px;color:var(--muted)}
     code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
   </style>
 </head>
@@ -28,39 +52,106 @@
 
     <div id="gate" class="card">
       <div class="note warn">
-        This page is public on GitHub Pages. The code check is only a basic lock.
+        This page is public. The code check is only a basic lock (not real security).
       </div>
-      <div class="row">
-        <input id="code" type="password" placeholder="Enter admin code" autocomplete="off"/>
-        <button id="unlock">Unlock</button>
+      <div class="row" style="margin-top:10px;">
+        <input id="code" type="password" placeholder="Enter admin code" autocomplete="off" style="max-width:260px;">
+        <button id="unlock" class="btnPrimary">Unlock</button>
+        <a href="./" style="align-self:center;">Back to site</a>
       </div>
-      <div id="gateMsg" class="note err hidden"></div>
+      <div id="gateMsg" class="note err hidden" style="margin-top:10px;"></div>
     </div>
 
     <div id="admin" class="hidden">
       <div class="note">
         Workflow:
         1) Click <strong>Load current config</strong>.
-        2) Edit JSON.
+        2) Edit using the form.
         3) Click <strong>Validate</strong>.
         4) Click <strong>Download config.json</strong>.
-        5) Upload it to your repo at <code>data/config.json</code> (replace existing).
+        5) Upload it to GitHub at <code>data/config.json</code> (replace existing file).
       </div>
 
-      <div class="row">
-        <button id="loadBtn">Load current config</button>
-        <button id="validateBtn">Validate</button>
-        <button id="downloadBtn">Download config.json</button>
-        <a href="./" style="align-self:center">Back to site</a>
+      <div class="card" style="margin-top:12px;">
+        <div class="row">
+          <button id="loadBtn" class="btnPrimary">Load current config</button>
+          <button id="validateBtn">Validate</button>
+          <button id="downloadBtn" class="btnPrimary">Download config.json</button>
+          <button id="showJsonBtn">Show JSON</button>
+        </div>
+        <div id="msg" class="note" style="margin-top:10px;"></div>
+        <pre id="jsonOut" class="card hidden" style="margin-top:10px;white-space:pre-wrap;word-break:break-word;"></pre>
       </div>
 
-      <textarea id="json" spellcheck="false"></textarea>
-      <div id="msg" class="note" style="margin-top:12px;"></div>
+      <div class="card" style="margin-top:12px;">
+        <h2>Basics</h2>
+        <div class="row2">
+          <div>
+            <label>Order email (where orders are sent)</label>
+            <input id="orderEmailTo" placeholder="ex: santiagopf2014@gmail.com">
+          </div>
+          <div>
+            <label>Currency</label>
+            <input id="currency" placeholder="CAD">
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h2>Product types</h2>
+        <div class="small">Examples: Sticker, Magnet, Print only. You can add more.</div>
+        <div id="typesList" class="table" style="margin-top:10px;"></div>
+        <div class="row" style="margin-top:10px;">
+          <button id="addTypeBtn">Add product type</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h2>Sizes and prices</h2>
+        <div class="small">Price is in your currency. Use numbers like 1.25</div>
+        <div id="sizesList" class="table" style="margin-top:10px;"></div>
+        <div class="row" style="margin-top:10px;">
+          <button id="addSizeBtn">Add size</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h2>Pickup text</h2>
+        <div class="row2">
+          <div>
+            <label>Pickup (EN)</label>
+            <textarea id="pickup_en"></textarea>
+          </div>
+          <div>
+            <label>Pickup (FR)</label>
+            <textarea id="pickup_fr"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h2>Disclaimer (always included in the email in both languages)</h2>
+        <div class="row2">
+          <div>
+            <label>Disclaimer (EN)</label>
+            <textarea id="disclaimer_en"></textarea>
+          </div>
+          <div>
+            <label>Disclaimer (FR)</label>
+            <textarea id="disclaimer_fr"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="note warn" style="margin-top:12px;">
+        After downloading <strong>config.json</strong>, upload it to GitHub:
+        Repo → <code>data/config.json</code> → Upload/Replace → Commit.
+      </div>
     </div>
   </div>
 
   <script>
-    // Change this to your own code
+    // Change this code to whatever you want
     const ADMIN_CODE = "WOLF-ADMIN-1234";
     const CONFIG_URL = "data/config.json";
 
@@ -68,6 +159,13 @@
     const admin = document.getElementById("admin");
     const gateMsg = document.getElementById("gateMsg");
     const codeInp = document.getElementById("code");
+    const msg = document.getElementById("msg");
+    const jsonOut = document.getElementById("jsonOut");
+
+    function showMsg(kind, text){
+      msg.className = "note" + (kind ? " " + kind : "");
+      msg.textContent = text;
+    }
 
     function unlock(){
       const v = (codeInp.value || "").trim();
@@ -79,83 +177,278 @@
       gate.classList.add("hidden");
       admin.classList.remove("hidden");
       gateMsg.classList.add("hidden");
+      showMsg("", "Unlocked. Click “Load current config”.");
     }
 
     document.getElementById("unlock").addEventListener("click", unlock);
     codeInp.addEventListener("keydown", (e)=>{ if(e.key === "Enter") unlock(); });
 
-    const el = document.getElementById("json");
-    const msg = document.getElementById("msg");
+    // Form fields
+    const fields = {
+      orderEmailTo: document.getElementById("orderEmailTo"),
+      currency: document.getElementById("currency"),
+      pickup_en: document.getElementById("pickup_en"),
+      pickup_fr: document.getElementById("pickup_fr"),
+      disclaimer_en: document.getElementById("disclaimer_en"),
+      disclaimer_fr: document.getElementById("disclaimer_fr")
+    };
 
-    function validateConfig(obj){
+    const typesList = document.getElementById("typesList");
+    const sizesList = document.getElementById("sizesList");
+
+    let currentConfig = null;
+
+    function typeRow(type, idx){
+      const div = document.createElement("div");
+      div.className = "itemRow";
+      div.innerHTML = `
+        <div class="row2">
+          <div>
+            <label>Key (no spaces)</label>
+            <input data-k="key" value="${escapeAttr(type.key || "")}" placeholder="ex: sticker">
+          </div>
+          <div style="display:flex;align-items:end;justify-content:flex-end;">
+            <button class="btnDanger" type="button" data-action="remove">Remove</button>
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Label (EN)</label>
+            <input data-k="en" value="${escapeAttr(type.en || "")}" placeholder="Sticker">
+          </div>
+          <div>
+            <label>Label (FR)</label>
+            <input data-k="fr" value="${escapeAttr(type.fr || "")}" placeholder="Autocollant">
+          </div>
+        </div>
+      `;
+      div.querySelector('[data-action="remove"]').addEventListener("click", ()=>{
+        currentConfig.productTypes.splice(idx, 1);
+        renderTypes();
+      });
+      return div;
+    }
+
+    function sizeRow(size, idx){
+      const div = document.createElement("div");
+      div.className = "itemRow";
+      div.innerHTML = `
+        <div class="row2">
+          <div>
+            <label>Key (no spaces)</label>
+            <input data-k="key" value="${escapeAttr(size.key || "")}" placeholder="ex: 10x5">
+          </div>
+          <div style="display:flex;align-items:end;justify-content:flex-end;">
+            <button class="btnDanger" type="button" data-action="remove">Remove</button>
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Label (EN)</label>
+            <input data-k="label_en" value="${escapeAttr(size.label_en || "")}" placeholder="10cm x 5cm">
+          </div>
+          <div>
+            <label>Label (FR)</label>
+            <input data-k="label_fr" value="${escapeAttr(size.label_fr || "")}" placeholder="10cm x 5cm">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Price</label>
+            <input data-k="price" value="${escapeAttr(String(size.price ?? ""))}" placeholder="1.25" inputmode="decimal">
+          </div>
+          <div>
+            <label class="small">Tip</label>
+            <div class="small">Use dot for decimals (1.25)</div>
+          </div>
+        </div>
+      `;
+      div.querySelector('[data-action="remove"]').addEventListener("click", ()=>{
+        currentConfig.sizes.splice(idx, 1);
+        renderSizes();
+      });
+      return div;
+    }
+
+    function renderTypes(){
+      typesList.innerHTML = "";
+      currentConfig.productTypes.forEach((t, idx)=>{
+        typesList.appendChild(typeRow(t, idx));
+      });
+    }
+
+    function renderSizes(){
+      sizesList.innerHTML = "";
+      currentConfig.sizes.forEach((s, idx)=>{
+        sizesList.appendChild(sizeRow(s, idx));
+      });
+    }
+
+    function readFormIntoConfig(){
+      currentConfig.orderEmailTo = fields.orderEmailTo.value.trim();
+      currentConfig.currency = fields.currency.value.trim() || "CAD";
+      currentConfig.pickup_en = fields.pickup_en.value.trim();
+      currentConfig.pickup_fr = fields.pickup_fr.value.trim();
+      currentConfig.disclaimer_en = fields.disclaimer_en.value.trim();
+      currentConfig.disclaimer_fr = fields.disclaimer_fr.value.trim();
+
+      // Read product types
+      const typeRows = Array.from(typesList.querySelectorAll(".itemRow"));
+      currentConfig.productTypes = typeRows.map(row => {
+        const obj = {};
+        row.querySelectorAll("input[data-k]").forEach(inp => obj[inp.dataset.k] = inp.value.trim());
+        return obj;
+      });
+
+      // Read sizes
+      const sizeRows = Array.from(sizesList.querySelectorAll(".itemRow"));
+      currentConfig.sizes = sizeRows.map(row => {
+        const obj = {};
+        row.querySelectorAll("input[data-k]").forEach(inp => {
+          const k = inp.dataset.k;
+          obj[k] = inp.value.trim();
+        });
+        // Convert price to number if possible
+        obj.price = Number(obj.price);
+        return obj;
+      });
+    }
+
+    function validateConfig(cfg){
       const requiredTop = ["currency","orderEmailTo","productTypes","sizes","pickup_en","pickup_fr","disclaimer_en","disclaimer_fr"];
       for(const k of requiredTop){
-        if(!(k in obj)) throw new Error("Missing field: " + k);
+        if(!(k in cfg)) throw new Error("Missing field: " + k);
       }
-      if(!Array.isArray(obj.productTypes) || obj.productTypes.length === 0) throw new Error("productTypes must be a non-empty array");
-      if(!Array.isArray(obj.sizes) || obj.sizes.length === 0) throw new Error("sizes must be a non-empty array");
+      if(!cfg.orderEmailTo.includes("@")) throw new Error("Order email looks invalid.");
 
-      obj.productTypes.forEach((p,i)=>{
-        ["key","en","fr"].forEach(k=>{ if(!p?.[k]) throw new Error(`productTypes[${i}] missing ${k}`); });
+      if(!Array.isArray(cfg.productTypes) || cfg.productTypes.length === 0) throw new Error("Add at least 1 product type.");
+      if(!Array.isArray(cfg.sizes) || cfg.sizes.length === 0) throw new Error("Add at least 1 size.");
+
+      const keyOk = (v)=>/^[a-z0-9]+([a-z0-9_-]*[a-z0-9])?$/.test(v);
+
+      cfg.productTypes.forEach((p,i)=>{
+        if(!p.key || !keyOk(p.key)) throw new Error(`Product type #${i+1}: invalid key.`);
+        if(!p.en) throw new Error(`Product type #${i+1}: missing EN label.`);
+        if(!p.fr) throw new Error(`Product type #${i+1}: missing FR label.`);
       });
 
-      obj.sizes.forEach((s,i)=>{
-        ["key","label_en","label_fr","price"].forEach(k=>{ if(s?.[k] === undefined || s?.[k] === "") throw new Error(`sizes[${i}] missing ${k}`); });
-        const price = Number(s.price);
-        if(!Number.isFinite(price) || price < 0) throw new Error(`sizes[${i}].price must be a number >= 0`);
+      cfg.sizes.forEach((s,i)=>{
+        if(!s.key || !keyOk(s.key)) throw new Error(`Size #${i+1}: invalid key.`);
+        if(!s.label_en) throw new Error(`Size #${i+1}: missing EN label.`);
+        if(!s.label_fr) throw new Error(`Size #${i+1}: missing FR label.`);
+        if(!Number.isFinite(s.price) || s.price < 0) throw new Error(`Size #${i+1}: price must be a number >= 0.`);
       });
+
+      const dupType = findDup(cfg.productTypes.map(x=>x.key));
+      if(dupType) throw new Error("Duplicate product type key: " + dupType);
+
+      const dupSize = findDup(cfg.sizes.map(x=>x.key));
+      if(dupSize) throw new Error("Duplicate size key: " + dupSize);
 
       return true;
+    }
+
+    function findDup(arr){
+      const seen = new Set();
+      for(const a of arr){
+        if(seen.has(a)) return a;
+        seen.add(a);
+      }
+      return null;
     }
 
     async function loadCurrent(){
       try{
         const res = await fetch(CONFIG_URL, { cache: "no-store" });
         if(!res.ok) throw new Error("Could not load " + CONFIG_URL);
-        const obj = await res.json();
-        el.value = JSON.stringify(obj, null, 2);
-        msg.className = "note";
-        msg.textContent = "Loaded current config.json.";
+        currentConfig = await res.json();
+
+        // Fill basics
+        fields.orderEmailTo.value = currentConfig.orderEmailTo || "";
+        fields.currency.value = currentConfig.currency || "CAD";
+        fields.pickup_en.value = currentConfig.pickup_en || "";
+        fields.pickup_fr.value = currentConfig.pickup_fr || "";
+        fields.disclaimer_en.value = currentConfig.disclaimer_en || "";
+        fields.disclaimer_fr.value = currentConfig.disclaimer_fr || "";
+
+        // Ensure arrays
+        currentConfig.productTypes = Array.isArray(currentConfig.productTypes) ? currentConfig.productTypes : [];
+        currentConfig.sizes = Array.isArray(currentConfig.sizes) ? currentConfig.sizes : [];
+
+        renderTypes();
+        renderSizes();
+
+        jsonOut.classList.add("hidden");
+        showMsg("", "Loaded. Edit values, then Validate, then Download.");
       }catch(e){
-        msg.className = "note err";
-        msg.textContent = "Load failed: " + e.message;
+        showMsg("err", "Load failed: " + e.message);
       }
     }
+
+    document.getElementById("addTypeBtn").addEventListener("click", ()=>{
+      if(!currentConfig) return showMsg("err", "Click “Load current config” first.");
+      currentConfig.productTypes.push({ key:"", en:"", fr:"" });
+      renderTypes();
+    });
+
+    document.getElementById("addSizeBtn").addEventListener("click", ()=>{
+      if(!currentConfig) return showMsg("err", "Click “Load current config” first.");
+      currentConfig.sizes.push({ key:"", label_en:"", label_fr:"", price:0 });
+      renderSizes();
+    });
 
     document.getElementById("loadBtn").addEventListener("click", loadCurrent);
 
     document.getElementById("validateBtn").addEventListener("click", ()=>{
       try{
-        const obj = JSON.parse(el.value);
-        validateConfig(obj);
-        msg.className = "note";
-        msg.textContent = "Valid. You can download and upload to data/config.json.";
+        if(!currentConfig) throw new Error("Click “Load current config” first.");
+        readFormIntoConfig();
+        validateConfig(currentConfig);
+        showMsg("", "Valid. Now click Download config.json.");
       }catch(e){
-        msg.className = "note err";
-        msg.textContent = "Invalid: " + e.message;
+        showMsg("err", "Invalid: " + e.message);
       }
     });
 
     document.getElementById("downloadBtn").addEventListener("click", ()=>{
       try{
-        const obj = JSON.parse(el.value);
-        validateConfig(obj);
-        const blob = new Blob([JSON.stringify(obj, null, 2)], { type:"application/json" });
+        if(!currentConfig) throw new Error("Click “Load current config” first.");
+        readFormIntoConfig();
+        validateConfig(currentConfig);
+
+        const blob = new Blob([JSON.stringify(currentConfig, null, 2)], { type:"application/json" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "config.json";
         a.click();
         URL.revokeObjectURL(a.href);
-        msg.className = "note";
-        msg.textContent = "Downloaded config.json. Upload it to your repo at data/config.json.";
+
+        showMsg("", "Downloaded config.json. Upload it to data/config.json in GitHub.");
       }catch(e){
-        msg.className = "note err";
-        msg.textContent = "Cannot download: " + e.message;
+        showMsg("err", "Cannot download: " + e.message);
       }
     });
 
-    // Optional: auto-load after unlock (comment out if you prefer manual)
-    // loadCurrent();
+    document.getElementById("showJsonBtn").addEventListener("click", ()=>{
+      try{
+        if(!currentConfig) throw new Error("Click “Load current config” first.");
+        readFormIntoConfig();
+        jsonOut.textContent = JSON.stringify(currentConfig, null, 2);
+        jsonOut.classList.toggle("hidden");
+        showMsg("", "JSON preview updated.");
+      }catch(e){
+        showMsg("err", e.message);
+      }
+    });
+
+    function escapeAttr(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
   </script>
 </body>
 </html>
