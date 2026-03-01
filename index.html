@@ -247,12 +247,19 @@
     position:relative;
   }
   .thumb img{
-    width:100%;
-    height:100%;
-    object-fit: cover;
-    transform: scale(1.02);
-  }
+  width:100%;
+  height:100%;
+  object-fit: contain;
+  background: #fff;
+}
 
+.thumb, .bigImg{
+  background:
+    radial-gradient(300px 200px at 30% 20%, rgba(124,58,237,.10), transparent 60%),
+    radial-gradient(260px 220px at 80% 70%, rgba(6,182,212,.10), transparent 60%),
+    #fff;
+}
+    
   .cardBody{
     padding: 12px 12px 14px 12px;
     display:flex;
@@ -328,7 +335,12 @@
     box-shadow: 0 10px 20px rgba(16,24,40,.08);
   }
 
-  .bigImg img{ width:100%; height:100%; object-fit: cover; }
+  .bigImg img{
+  width:100%;
+  height:100%;
+  object-fit: contain;
+  background: #fff;
+}
 
   .info h2{ margin:0; font-size: 22px; letter-spacing:.2px; }
   .info p{ margin: 8px 0 0 0; color: var(--muted); line-height: 1.4; font-size: 14px; }
