@@ -439,19 +439,32 @@
     padding: 10px 12px;
   }
 }
+
+.brand{
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+}
+.brand:focus{
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: 16px;
+}
 </style>
 </head>
 
 <body>
   <header>
     <div class="topbar">
-      <div class="brand" role="banner">
-        <img id="logo" src="assets/logo.png" alt="Wolf logo" onerror="this.style.display='none'">
-        <div class="title">
-          <strong>Wolf</strong>
-          <span id="subtitle">Catalog</span>
-        </div>
-      </div>
+      <button class="brand" role="banner" type="button" onclick="go('#')" aria-label="Go to home">
+         <img id="logo" src="assets/logo.png" alt="Wolf logo" onerror="this.style.display='none'">
+         <div class="title">
+           <strong>Wolf</strong>
+           <span id="subtitle">Catalog</span>
+         </div>
+      </button>
 
       <div class="controls" role="navigation" aria-label="Top controls">
         <div class="pill" aria-label="Language">
