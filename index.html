@@ -401,14 +401,25 @@
 
   /* Mobile quality: keep cart button easy to reach */
   @media (max-width: 520px){
-    .controls{ gap:8px; }
-    #cartBtn{
-      position: fixed;
-      right: 14px;
-      bottom: 14px;
-      z-index: 50;
-    }
+  .topbar{
+    padding: 12px 14px;
   }
+  .brand{
+    min-width: 0;
+  }
+  .brand .title strong{
+    font-size: 15px;
+  }
+  .controls{
+    gap: 8px;
+  }
+  #langBtn{
+    padding: 10px 12px;
+  }
+  #cartBtn{
+    padding: 10px 12px;
+  }
+}
 </style>
 </head>
 
@@ -463,12 +474,12 @@ async function loadConfig(){
         const raw = localStorage.getItem(LS_KEY);
         const parsed = raw ? JSON.parse(raw) : null;
         return {
-          lang: parsed?.lang === "fr" ? "fr" : "en",
+          lang: parsed?.lang === "en" ? "en" : "fr",
           cart: Array.isArray(parsed?.cart) ? parsed.cart : [],
           route: { view: "home", id: null }
         };
       }catch(e){
-        return { lang:"en", cart:[], route:{view:"home",id:null} };
+        return { lang:"fr", cart:[], route:{view:"home",id:null} };
       }
     }
     function saveState(){
