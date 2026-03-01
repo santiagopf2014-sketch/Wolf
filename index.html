@@ -460,29 +460,13 @@
     // ---------------------------
     // Editable options/prices
     // ---------------------------
-    const CONFIG = {
-      currency: "CAD",
-      orderEmailTo: "santiagopf2014@gmail.com",
+    let CONFIG = null;
 
-      productTypes: [
-        { key: "sticker", en: "Sticker", fr: "Autocollant" },
-        { key: "magnet",  en: "Magnet",  fr: "Aimant" },
-        { key: "print",   en: "Print only", fr: "Impression seulement" }
-      ],
-
-      // sizes + prices (CAD)
-      sizes: [
-        { key: "4x2",   label_en: "4cm x 2cm",  label_fr: "4cm x 2cm",  price: 0.50 },
-        { key: "10x5",  label_en: "10cm x 5cm", label_fr: "10cm x 5cm", price: 1.25 },
-        { key: "20x10", label_en: "20cm x 10cm",label_fr: "20cm x 10cm",price: 3.00 }
-      ],
-
-      pickup_en: "Pickup is usually outside the school. We will confirm the exact spot by text.",
-      pickup_fr: "La remise se fait le plus souvent à l’extérieur de l’école. On confirmera l’endroit exact par texto.",
-
-      disclaimer_en: "The site is for order requests only. Payment and exchange happen outside the school. No payment is collected online. We do not store personal data.",
-      disclaimer_fr: "Le site sert uniquement à envoyer une demande de commande. Le paiement et l’échange se font à l’extérieur de l’école. Aucun paiement n’est effectué en ligne. Nous ne conservons pas de données personnelles."
-    };
+async function loadConfig(){
+  const res = await fetch("data/config.json", { cache: "no-store" });
+  if(!res.ok) throw new Error("config fetch failed");
+  CONFIG = await res.json();
+}
 
     // ---------------------------
     // State + helpers
@@ -1097,6 +1081,7 @@
     (async function init(){
       syncTopBar();
       try{
+        await loadConfig();
         await loadCatalog();
       }catch(e){
         app.innerHTML = `<div class="notice">${escapeHTML(s("catalogError"))}</div>`;
