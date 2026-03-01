@@ -578,12 +578,20 @@ async function loadConfig(){
       return state.cart.reduce((sum, it) => sum + (Number(it.unitPrice) * Number(it.qty)), 0);
     }
 
-    function findSize(key){
-      return CONFIG.sizes.find(x => x.key === key) || CONFIG.sizes[0];
-    }
-    function findType(key){
-      return CONFIG.productTypes.find(x => x.key === key) || CONFIG.productTypes[0];
-    }
+   function findSize(key){
+  return CONFIG.sizes.find(x => x.key === key) || CONFIG.sizes[0];
+}
+function findType(key){
+  return CONFIG.productTypes.find(x => x.key === key) || CONFIG.productTypes[0];
+}
+function getUnitPrice(productTypeKey, sizeKey){
+  const type = findType(productTypeKey);
+  const price = type?.prices?.[sizeKey];
+  if(Number.isFinite(Number(price))) return Number(price);
+
+  // fallback if missing
+  return 0;
+}
 
     function addToCart(item, productTypeKey, sizeKey, qty){
       const q = Math.max(1, Math.min(99, Number(qty || 1)));
@@ -603,7 +611,7 @@ async function loadConfig(){
           itemName_fr: item.title_fr,
           productType: type.key,
           size: size.key,
-          unitPrice: size.price,
+          unitPrice: getUnitPrice(type.key, size.key),
           qty: q
         });
       }
@@ -845,8 +853,8 @@ async function loadConfig(){
       }).join("");
 
       const sizeOptions = CONFIG.sizes.map(sz => {
-        const label = state.lang === "fr" ? sz.label_fr : sz.label_en;
-        return `<option value="${escapeAttr(sz.key)}">${escapeHTML(label)} (${money(sz.price)})</option>`;
+      const label = state.lang === "fr" ? sz.label_fr : sz.label_en;
+      return `<option value="${escapeAttr(sz.key)}">${escapeHTML(label)}</option>`;
       }).join("");
 
       app.innerHTML = `
@@ -918,9 +926,10 @@ async function loadConfig(){
       const a11yMsg = document.getElementById("a11yMsg");
 
       function syncUnit(){
-        const sz = findSize(sizeSel.value);
-        unitPrice.textContent = money(sz.price);
+        const price = getUnitPrice(typeSel.value, sizeSel.value);
+        unitPrice.textContent = money(price);
       }
+      typeSel.addEventListener("change", syncUnit);
       sizeSel.addEventListener("change", syncUnit);
       syncUnit();
 
