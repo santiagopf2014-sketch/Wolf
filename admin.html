@@ -14,7 +14,7 @@
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,Arial;background:var(--bg);color:var(--text)}
     a{color:var(--muted)}
-    .wrap{max-width:1050px;margin:0 auto;padding:18px}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
     h1{margin:0 0 10px 0}
     h2{margin:18px 0 10px 0;font-size:18px}
     .card{border:1px solid var(--line);background:var(--card);border-radius:var(--radius);padding:14px}
@@ -22,7 +22,7 @@
     .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media (max-width:720px){.row2{grid-template-columns:1fr}}
     label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
-    input,textarea,select{
+    input,textarea{
       width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.2);
       background:rgba(255,255,255,.06);color:var(--text);padding:10px 12px;font-size:14px
     }
@@ -38,12 +38,13 @@
     .note.warn{border-color:rgba(255,210,107,.35);background:var(--warn)}
     .note.err{border-color:rgba(255,107,107,.35);background:var(--bad)}
     .hidden{display:none}
-    .table{display:grid;gap:10px}
-    .itemRow{
-      border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.04)
-    }
+    .itemRow{border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.04);margin-top:10px}
     .small{font-size:12px;color:var(--muted)}
     code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{border:1px solid rgba(255,255,255,.14);padding:10px;vertical-align:top}
+    th{background:rgba(255,255,255,.06);text-align:left}
+    .priceInp{min-width:110px}
   </style>
 </head>
 <body>
@@ -51,9 +52,7 @@
     <h1>Wolf Admin</h1>
 
     <div id="gate" class="card">
-      <div class="note warn">
-        This page is public. The code check is only a basic lock (not real security).
-      </div>
+      <div class="note warn">This page is public. The code check is only a basic lock (not real security).</div>
       <div class="row" style="margin-top:10px;">
         <input id="code" type="password" placeholder="Enter admin code" autocomplete="off" style="max-width:260px;">
         <button id="unlock" class="btnPrimary">Unlock</button>
@@ -65,11 +64,11 @@
     <div id="admin" class="hidden">
       <div class="note">
         Workflow:
-        1) Click <strong>Load current config</strong>.
-        2) Edit using the form.
-        3) Click <strong>Validate</strong>.
-        4) Click <strong>Download config.json</strong>.
-        5) Upload it to GitHub at <code>data/config.json</code> (replace existing file).
+        1) Load current config.
+        2) Edit form + prices.
+        3) Validate.
+        4) Download config.json.
+        5) Upload to <code>data/config.json</code> in GitHub (replace existing file) and commit.
       </div>
 
       <div class="card" style="margin-top:12px;">
@@ -99,20 +98,26 @@
 
       <div class="card" style="margin-top:12px;">
         <h2>Product types</h2>
-        <div class="small">Examples: Sticker, Magnet, Print only. You can add more.</div>
-        <div id="typesList" class="table" style="margin-top:10px;"></div>
+        <div class="small">Each product type needs a price for every size.</div>
+        <div id="typesList"></div>
         <div class="row" style="margin-top:10px;">
           <button id="addTypeBtn">Add product type</button>
         </div>
       </div>
 
       <div class="card" style="margin-top:12px;">
-        <h2>Sizes and prices</h2>
-        <div class="small">Price is in your currency. Use numbers like 1.25</div>
-        <div id="sizesList" class="table" style="margin-top:10px;"></div>
+        <h2>Sizes</h2>
+        <div class="small">Key examples: 4x2, 10x5, 20x10</div>
+        <div id="sizesList"></div>
         <div class="row" style="margin-top:10px;">
           <button id="addSizeBtn">Add size</button>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h2>Prices (required)</h2>
+        <div class="small">Fill every cell. Use numbers like 1.25</div>
+        <div id="pricesGrid"></div>
       </div>
 
       <div class="card" style="margin-top:12px;">
@@ -151,8 +156,7 @@
   </div>
 
   <script>
-    // Change this code to whatever you want
-    const ADMIN_CODE = "WOLF-SANTI-2014";
+    const ADMIN_CODE = "WOLF-ADMIN-1234";
     const CONFIG_URL = "data/config.json";
 
     const gate = document.getElementById("gate");
@@ -161,6 +165,21 @@
     const codeInp = document.getElementById("code");
     const msg = document.getElementById("msg");
     const jsonOut = document.getElementById("jsonOut");
+
+    const fields = {
+      orderEmailTo: document.getElementById("orderEmailTo"),
+      currency: document.getElementById("currency"),
+      pickup_en: document.getElementById("pickup_en"),
+      pickup_fr: document.getElementById("pickup_fr"),
+      disclaimer_en: document.getElementById("disclaimer_en"),
+      disclaimer_fr: document.getElementById("disclaimer_fr")
+    };
+
+    const typesList = document.getElementById("typesList");
+    const sizesList = document.getElementById("sizesList");
+    const pricesGrid = document.getElementById("pricesGrid");
+
+    let currentConfig = null;
 
     function showMsg(kind, text){
       msg.className = "note" + (kind ? " " + kind : "");
@@ -183,104 +202,197 @@
     document.getElementById("unlock").addEventListener("click", unlock);
     codeInp.addEventListener("keydown", (e)=>{ if(e.key === "Enter") unlock(); });
 
-    // Form fields
-    const fields = {
-      orderEmailTo: document.getElementById("orderEmailTo"),
-      currency: document.getElementById("currency"),
-      pickup_en: document.getElementById("pickup_en"),
-      pickup_fr: document.getElementById("pickup_fr"),
-      disclaimer_en: document.getElementById("disclaimer_en"),
-      disclaimer_fr: document.getElementById("disclaimer_fr")
-    };
-
-    const typesList = document.getElementById("typesList");
-    const sizesList = document.getElementById("sizesList");
-
-    let currentConfig = null;
-
-    function typeRow(type, idx){
-      const div = document.createElement("div");
-      div.className = "itemRow";
-      div.innerHTML = `
-        <div class="row2">
-          <div>
-            <label>Key (no spaces)</label>
-            <input data-k="key" value="${escapeAttr(type.key || "")}" placeholder="ex: sticker">
-          </div>
-          <div style="display:flex;align-items:end;justify-content:flex-end;">
-            <button class="btnDanger" type="button" data-action="remove">Remove</button>
-          </div>
-        </div>
-        <div class="row2">
-          <div>
-            <label>Label (EN)</label>
-            <input data-k="en" value="${escapeAttr(type.en || "")}" placeholder="Sticker">
-          </div>
-          <div>
-            <label>Label (FR)</label>
-            <input data-k="fr" value="${escapeAttr(type.fr || "")}" placeholder="Autocollant">
-          </div>
-        </div>
-      `;
-      div.querySelector('[data-action="remove"]').addEventListener("click", ()=>{
-        currentConfig.productTypes.splice(idx, 1);
-        renderTypes();
+    function ensurePriceMatrix(){
+      // Ensure every type has prices for every size
+      const sizeKeys = currentConfig.sizes.map(s => s.key);
+      currentConfig.productTypes.forEach(t => {
+        if(!t.prices || typeof t.prices !== "object") t.prices = {};
+        sizeKeys.forEach(sk => {
+          if(t.prices[sk] === undefined || t.prices[sk] === null || t.prices[sk] === ""){
+            t.prices[sk] = 0;
+          }
+        });
       });
-      return div;
-    }
-
-    function sizeRow(size, idx){
-      const div = document.createElement("div");
-      div.className = "itemRow";
-      div.innerHTML = `
-        <div class="row2">
-          <div>
-            <label>Key (no spaces)</label>
-            <input data-k="key" value="${escapeAttr(size.key || "")}" placeholder="ex: 10x5">
-          </div>
-          <div style="display:flex;align-items:end;justify-content:flex-end;">
-            <button class="btnDanger" type="button" data-action="remove">Remove</button>
-          </div>
-        </div>
-        <div class="row2">
-          <div>
-            <label>Label (EN)</label>
-            <input data-k="label_en" value="${escapeAttr(size.label_en || "")}" placeholder="10cm x 5cm">
-          </div>
-          <div>
-            <label>Label (FR)</label>
-            <input data-k="label_fr" value="${escapeAttr(size.label_fr || "")}" placeholder="10cm x 5cm">
-          </div>
-        </div>
-        <div class="row2">
-          <div>
-            <label>Price</label>
-            <input data-k="price" value="${escapeAttr(String(size.price ?? ""))}" placeholder="1.25" inputmode="decimal">
-          </div>
-          <div>
-            <label class="small">Tip</label>
-            <div class="small">Use dot for decimals (1.25)</div>
-          </div>
-        </div>
-      `;
-      div.querySelector('[data-action="remove"]').addEventListener("click", ()=>{
-        currentConfig.sizes.splice(idx, 1);
-        renderSizes();
-      });
-      return div;
     }
 
     function renderTypes(){
       typesList.innerHTML = "";
       currentConfig.productTypes.forEach((t, idx)=>{
-        typesList.appendChild(typeRow(t, idx));
+        const div = document.createElement("div");
+        div.className = "itemRow";
+        div.innerHTML = `
+          <div class="row2">
+            <div>
+              <label>Key (no spaces)</label>
+              <input data-k="key" value="${escapeAttr(t.key || "")}" placeholder="ex: sticker">
+            </div>
+            <div style="display:flex;align-items:end;justify-content:flex-end;">
+              <button class="btnDanger" type="button" data-action="remove">Remove</button>
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <label>Label (EN)</label>
+              <input data-k="en" value="${escapeAttr(t.en || "")}" placeholder="Sticker">
+            </div>
+            <div>
+              <label>Label (FR)</label>
+              <input data-k="fr" value="${escapeAttr(t.fr || "")}" placeholder="Autocollant">
+            </div>
+          </div>
+        `;
+
+        div.querySelector('[data-action="remove"]').addEventListener("click", ()=>{
+          currentConfig.productTypes.splice(idx, 1);
+          renderTypes();
+          ensurePriceMatrix();
+          renderPrices();
+        });
+
+        div.querySelectorAll('input[data-k]').forEach(inp=>{
+          inp.addEventListener("input", ()=>{
+            readTypesIntoConfig();
+            ensurePriceMatrix();
+            renderPrices();
+          });
+        });
+
+        typesList.appendChild(div);
       });
     }
 
     function renderSizes(){
       sizesList.innerHTML = "";
       currentConfig.sizes.forEach((s, idx)=>{
-        sizesList.appendChild(sizeRow(s, idx));
+        const div = document.createElement("div");
+        div.className = "itemRow";
+        div.innerHTML = `
+          <div class="row2">
+            <div>
+              <label>Key (no spaces)</label>
+              <input data-k="key" value="${escapeAttr(s.key || "")}" placeholder="ex: 10x5">
+            </div>
+            <div style="display:flex;align-items:end;justify-content:flex-end;">
+              <button class="btnDanger" type="button" data-action="remove">Remove</button>
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <label>Label (EN)</label>
+              <input data-k="label_en" value="${escapeAttr(s.label_en || "")}" placeholder="10cm x 5cm">
+            </div>
+            <div>
+              <label>Label (FR)</label>
+              <input data-k="label_fr" value="${escapeAttr(s.label_fr || "")}" placeholder="10cm x 5cm">
+            </div>
+          </div>
+        `;
+
+        div.querySelector('[data-action="remove"]').addEventListener("click", ()=>{
+          const removedKey = currentConfig.sizes[idx]?.key;
+          currentConfig.sizes.splice(idx, 1);
+          // Remove that size key from all prices
+          currentConfig.productTypes.forEach(t => {
+            if(t.prices && removedKey) delete t.prices[removedKey];
+          });
+          renderSizes();
+          ensurePriceMatrix();
+          renderPrices();
+        });
+
+        div.querySelectorAll('input[data-k]').forEach(inp=>{
+          inp.addEventListener("input", ()=>{
+            // If size key changed, migrate prices keys
+            const before = currentConfig.sizes[idx].key;
+            readSizesIntoConfig();
+
+            const after = currentConfig.sizes[idx].key;
+            if(before && after && before !== after){
+              currentConfig.productTypes.forEach(t=>{
+                if(!t.prices) t.prices = {};
+                if(t.prices[after] === undefined && t.prices[before] !== undefined){
+                  t.prices[after] = t.prices[before];
+                }
+                delete t.prices[before];
+              });
+            }
+
+            ensurePriceMatrix();
+            renderPrices();
+          });
+        });
+
+        sizesList.appendChild(div);
+      });
+    }
+
+    function renderPrices(){
+      pricesGrid.innerHTML = "";
+      if(currentConfig.productTypes.length === 0 || currentConfig.sizes.length === 0){
+        pricesGrid.innerHTML = `<div class="note warn">Add at least 1 product type and 1 size to edit prices.</div>`;
+        return;
+      }
+
+      ensurePriceMatrix();
+
+      const table = document.createElement("table");
+
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      headRow.innerHTML = `<th>Size</th>` + currentConfig.productTypes.map(t => `<th>${escapeHTML(t.en || t.key || "")}<div class="small">${escapeHTML(t.fr || "")}</div></th>`).join("");
+      thead.appendChild(headRow);
+
+      const tbody = document.createElement("tbody");
+
+      currentConfig.sizes.forEach(sz=>{
+        const tr = document.createElement("tr");
+        const sizeLabel = `${sz.label_en || sz.key} (${sz.key})`;
+        tr.innerHTML = `<td><strong>${escapeHTML(sizeLabel)}</strong><div class="small">${escapeHTML(sz.label_fr || "")}</div></td>` +
+          currentConfig.productTypes.map(t=>{
+            const v = t.prices?.[sz.key];
+            return `<td>
+              <label class="small">Price</label>
+              <input class="priceInp" data-type="${escapeAttr(t.key)}" data-size="${escapeAttr(sz.key)}" value="${escapeAttr(String(v))}" inputmode="decimal" placeholder="0.00">
+            </td>`;
+          }).join("");
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      pricesGrid.appendChild(table);
+
+      // Bind inputs
+      pricesGrid.querySelectorAll("input[data-type][data-size]").forEach(inp=>{
+        inp.addEventListener("input", ()=>{
+          const typeKey = inp.dataset.type;
+          const sizeKey = inp.dataset.size;
+          const t = currentConfig.productTypes.find(x=>x.key === typeKey);
+          if(!t) return;
+          if(!t.prices) t.prices = {};
+          t.prices[sizeKey] = inp.value;
+        });
+      });
+    }
+
+    function readTypesIntoConfig(){
+      const rows = Array.from(typesList.querySelectorAll(".itemRow"));
+      currentConfig.productTypes = rows.map((row, i) => {
+        const obj = currentConfig.productTypes[i] || {};
+        row.querySelectorAll("input[data-k]").forEach(inp => obj[inp.dataset.k] = inp.value.trim());
+        // keep prices map if already exists
+        if(!obj.prices || typeof obj.prices !== "object") obj.prices = {};
+        return obj;
+      });
+    }
+
+    function readSizesIntoConfig(){
+      const rows = Array.from(sizesList.querySelectorAll(".itemRow"));
+      currentConfig.sizes = rows.map(row => {
+        const obj = {};
+        row.querySelectorAll("input[data-k]").forEach(inp => obj[inp.dataset.k] = inp.value.trim());
+        return obj;
       });
     }
 
@@ -292,25 +404,13 @@
       currentConfig.disclaimer_en = fields.disclaimer_en.value.trim();
       currentConfig.disclaimer_fr = fields.disclaimer_fr.value.trim();
 
-      // Read product types
-      const typeRows = Array.from(typesList.querySelectorAll(".itemRow"));
-      currentConfig.productTypes = typeRows.map(row => {
-        const obj = {};
-        row.querySelectorAll("input[data-k]").forEach(inp => obj[inp.dataset.k] = inp.value.trim());
-        return obj;
-      });
+      readTypesIntoConfig();
+      readSizesIntoConfig();
 
-      // Read sizes
-      const sizeRows = Array.from(sizesList.querySelectorAll(".itemRow"));
-      currentConfig.sizes = sizeRows.map(row => {
-        const obj = {};
-        row.querySelectorAll("input[data-k]").forEach(inp => {
-          const k = inp.dataset.k;
-          obj[k] = inp.value.trim();
-        });
-        // Convert price to number if possible
-        obj.price = Number(obj.price);
-        return obj;
+      // Convert all price cells to numbers
+      currentConfig.productTypes.forEach(t=>{
+        if(!t.prices || typeof t.prices !== "object") t.prices = {};
+        Object.keys(t.prices).forEach(k => t.prices[k] = Number(t.prices[k]));
       });
     }
 
@@ -320,41 +420,43 @@
         if(!(k in cfg)) throw new Error("Missing field: " + k);
       }
       if(!cfg.orderEmailTo.includes("@")) throw new Error("Order email looks invalid.");
-
       if(!Array.isArray(cfg.productTypes) || cfg.productTypes.length === 0) throw new Error("Add at least 1 product type.");
       if(!Array.isArray(cfg.sizes) || cfg.sizes.length === 0) throw new Error("Add at least 1 size.");
 
       const keyOk = (v)=>/^[a-z0-9]+([a-z0-9_-]*[a-z0-9])?$/.test(v);
 
+      const typeKeys = new Set();
       cfg.productTypes.forEach((p,i)=>{
         if(!p.key || !keyOk(p.key)) throw new Error(`Product type #${i+1}: invalid key.`);
+        if(typeKeys.has(p.key)) throw new Error("Duplicate product type key: " + p.key);
+        typeKeys.add(p.key);
+
         if(!p.en) throw new Error(`Product type #${i+1}: missing EN label.`);
         if(!p.fr) throw new Error(`Product type #${i+1}: missing FR label.`);
+        if(!p.prices || typeof p.prices !== "object") throw new Error(`Product type "${p.key}" missing prices.`);
       });
 
+      const sizeKeys = new Set();
       cfg.sizes.forEach((s,i)=>{
         if(!s.key || !keyOk(s.key)) throw new Error(`Size #${i+1}: invalid key.`);
+        if(sizeKeys.has(s.key)) throw new Error("Duplicate size key: " + s.key);
+        sizeKeys.add(s.key);
+
         if(!s.label_en) throw new Error(`Size #${i+1}: missing EN label.`);
         if(!s.label_fr) throw new Error(`Size #${i+1}: missing FR label.`);
-        if(!Number.isFinite(s.price) || s.price < 0) throw new Error(`Size #${i+1}: price must be a number >= 0.`);
       });
 
-      const dupType = findDup(cfg.productTypes.map(x=>x.key));
-      if(dupType) throw new Error("Duplicate product type key: " + dupType);
-
-      const dupSize = findDup(cfg.sizes.map(x=>x.key));
-      if(dupSize) throw new Error("Duplicate size key: " + dupSize);
+      // Required: every price exists and is valid number
+      cfg.productTypes.forEach(t=>{
+        cfg.sizes.forEach(sz=>{
+          const v = t.prices[sz.key];
+          if(v === undefined || v === null || v === "") throw new Error(`Missing price for type "${t.key}" size "${sz.key}".`);
+          const n = Number(v);
+          if(!Number.isFinite(n) || n < 0) throw new Error(`Invalid price for type "${t.key}" size "${sz.key}".`);
+        });
+      });
 
       return true;
-    }
-
-    function findDup(arr){
-      const seen = new Set();
-      for(const a of arr){
-        if(seen.has(a)) return a;
-        seen.add(a);
-      }
-      return null;
     }
 
     async function loadCurrent(){
@@ -375,11 +477,13 @@
         currentConfig.productTypes = Array.isArray(currentConfig.productTypes) ? currentConfig.productTypes : [];
         currentConfig.sizes = Array.isArray(currentConfig.sizes) ? currentConfig.sizes : [];
 
+        ensurePriceMatrix();
         renderTypes();
         renderSizes();
+        renderPrices();
 
         jsonOut.classList.add("hidden");
-        showMsg("", "Loaded. Edit values, then Validate, then Download.");
+        showMsg("", "Loaded. Edit values and prices, then Validate, then Download.");
       }catch(e){
         showMsg("err", "Load failed: " + e.message);
       }
@@ -387,14 +491,18 @@
 
     document.getElementById("addTypeBtn").addEventListener("click", ()=>{
       if(!currentConfig) return showMsg("err", "Click “Load current config” first.");
-      currentConfig.productTypes.push({ key:"", en:"", fr:"" });
+      currentConfig.productTypes.push({ key:"", en:"", fr:"", prices:{} });
+      ensurePriceMatrix();
       renderTypes();
+      renderPrices();
     });
 
     document.getElementById("addSizeBtn").addEventListener("click", ()=>{
       if(!currentConfig) return showMsg("err", "Click “Load current config” first.");
-      currentConfig.sizes.push({ key:"", label_en:"", label_fr:"", price:0 });
+      currentConfig.sizes.push({ key:"", label_en:"", label_fr:"" });
+      ensurePriceMatrix();
       renderSizes();
+      renderPrices();
     });
 
     document.getElementById("loadBtn").addEventListener("click", loadCurrent);
@@ -441,14 +549,15 @@
       }
     });
 
-    function escapeAttr(s){
-      return String(s ?? "")
+    function escapeHTML(str){
+      return String(str ?? "")
         .replaceAll("&","&amp;")
         .replaceAll("<","&lt;")
         .replaceAll(">","&gt;")
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+    function escapeAttr(str){ return escapeHTML(str).replaceAll("`","&#096;"); }
   </script>
 </body>
 </html>
