@@ -579,19 +579,16 @@ async function loadConfig(){
     }
 
    function findSize(key){
-  return CONFIG.sizes.find(x => x.key === key) || CONFIG.sizes[0];
-}
-function findType(key){
-  return CONFIG.productTypes.find(x => x.key === key) || CONFIG.productTypes[0];
-}
-function getUnitPrice(productTypeKey, sizeKey){
-  const type = findType(productTypeKey);
-  const price = type?.prices?.[sizeKey];
-  if(Number.isFinite(Number(price))) return Number(price);
-
-  // fallback if missing
-  return 0;
-}
+     return CONFIG.sizes.find(x => x.key === key) || CONFIG.sizes[0];
+   }
+   function findType(key){
+     return CONFIG.productTypes.find(x => x.key === key) || CONFIG.productTypes[0];
+   }
+   function getUnitPrice(productTypeKey, sizeKey){
+     const type = findType(productTypeKey);
+     const p = type?.prices?.[sizeKey];
+     return Number.isFinite(Number(p)) ? Number(p) : 0;
+   }
 
     function addToCart(item, productTypeKey, sizeKey, qty){
       const q = Math.max(1, Math.min(99, Number(qty || 1)));
@@ -926,8 +923,8 @@ function getUnitPrice(productTypeKey, sizeKey){
       const a11yMsg = document.getElementById("a11yMsg");
 
       function syncUnit(){
-        const price = getUnitPrice(typeSel.value, sizeSel.value);
-        unitPrice.textContent = money(price);
+      const price = getUnitPrice(typeSel.value, sizeSel.value);
+      unitPrice.textContent = money(price);
       }
       typeSel.addEventListener("change", syncUnit);
       sizeSel.addEventListener("change", syncUnit);
