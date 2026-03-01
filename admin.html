@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Wolf Admin</title>
+  <style>
+    body{font-family:system-ui,Arial;margin:0;background:#0b1020;color:#f3f6ff}
+    .wrap{max-width:980px;margin:0 auto;padding:18px}
+    h1{margin:0 0 10px 0}
+    .card{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:14px;padding:14px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+    textarea{width:100%;min-height:520px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#f3f6ff;padding:12px;font-size:13px}
+    input{border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#f3f6ff;padding:10px 12px;font-size:14px}
+    button{cursor:pointer;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#f3f6ff;padding:10px 12px;font-weight:750}
+    button:hover{background:rgba(255,255,255,.12)}
+    .note{border:1px solid rgba(140,255,193,.35);background:rgba(140,255,193,.10);border-radius:12px;padding:12px;font-size:13px;line-height:1.35}
+    .warn{border:1px solid rgba(255,210,107,.35);background:rgba(255,210,107,.12)}
+    .err{border:1px solid rgba(255,107,107,.35);background:rgba(255,107,107,.12)}
+    .hidden{display:none}
+    a{color:#b9c2ff}
+    code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Wolf Admin</h1>
+
+    <div id="gate" class="card">
+      <div class="note warn">
+        This page is public on GitHub Pages. The code check is only a basic lock.
+      </div>
+      <div class="row">
+        <input id="code" type="password" placeholder="Enter admin code" autocomplete="off"/>
+        <button id="unlock">Unlock</button>
+      </div>
+      <div id="gateMsg" class="note err hidden"></div>
+    </div>
+
+    <div id="admin" class="hidden">
+      <div class="note">
+        Workflow:
+        1) Click <strong>Load current config</strong>.
+        2) Edit JSON.
+        3) Click <strong>Validate</strong>.
+        4) Click <strong>Download config.json</strong>.
+        5) Upload it to your repo at <code>data/config.json</code> (replace existing).
+      </div>
+
+      <div class="row">
+        <button id="loadBtn">Load current config</button>
+        <button id="validateBtn">Validate</button>
+        <button id="downloadBtn">Download config.json</button>
+        <a href="./" style="align-self:center">Back to site</a>
+      </div>
+
+      <textarea id="json" spellcheck="false"></textarea>
+      <div id="msg" class="note" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Change this to your own code
+    const ADMIN_CODE = "WOLF-ADMIN-1234";
+    const CONFIG_URL = "data/config.json";
+
+    const gate = document.getElementById("gate");
+    const admin = document.getElementById("admin");
+    const gateMsg = document.getElementById("gateMsg");
+    const codeInp = document.getElementById("code");
+
+    function unlock(){
+      const v = (codeInp.value || "").trim();
+      if(v !== ADMIN_CODE){
+        gateMsg.textContent = "Wrong code.";
+        gateMsg.classList.remove("hidden");
+        return;
+      }
+      gate.classList.add("hidden");
+      admin.classList.remove("hidden");
+      gateMsg.classList.add("hidden");
+    }
+
+    document.getElementById("unlock").addEventListener("click", unlock);
+    codeInp.addEventListener("keydown", (e)=>{ if(e.key === "Enter") unlock(); });
+
+    const el = document.getElementById("json");
+    const msg = document.getElementById("msg");
+
+    function validateConfig(obj){
+      const requiredTop = ["currency","orderEmailTo","productTypes","sizes","pickup_en","pickup_fr","disclaimer_en","disclaimer_fr"];
+      for(const k of requiredTop){
+        if(!(k in obj)) throw new Error("Missing field: " + k);
+      }
+      if(!Array.isArray(obj.productTypes) || obj.productTypes.length === 0) throw new Error("productTypes must be a non-empty array");
+      if(!Array.isArray(obj.sizes) || obj.sizes.length === 0) throw new Error("sizes must be a non-empty array");
+
+      obj.productTypes.forEach((p,i)=>{
+        ["key","en","fr"].forEach(k=>{ if(!p?.[k]) throw new Error(`productTypes[${i}] missing ${k}`); });
+      });
+
+      obj.sizes.forEach((s,i)=>{
+        ["key","label_en","label_fr","price"].forEach(k=>{ if(s?.[k] === undefined || s?.[k] === "") throw new Error(`sizes[${i}] missing ${k}`); });
+        const price = Number(s.price);
+        if(!Number.isFinite(price) || price < 0) throw new Error(`sizes[${i}].price must be a number >= 0`);
+      });
+
+      return true;
+    }
+
+    async function loadCurrent(){
+      try{
+        const res = await fetch(CONFIG_URL, { cache: "no-store" });
+        if(!res.ok) throw new Error("Could not load " + CONFIG_URL);
+        const obj = await res.json();
+        el.value = JSON.stringify(obj, null, 2);
+        msg.className = "note";
+        msg.textContent = "Loaded current config.json.";
+      }catch(e){
+        msg.className = "note err";
+        msg.textContent = "Load failed: " + e.message;
+      }
+    }
+
+    document.getElementById("loadBtn").addEventListener("click", loadCurrent);
+
+    document.getElementById("validateBtn").addEventListener("click", ()=>{
+      try{
+        const obj = JSON.parse(el.value);
+        validateConfig(obj);
+        msg.className = "note";
+        msg.textContent = "Valid. You can download and upload to data/config.json.";
+      }catch(e){
+        msg.className = "note err";
+        msg.textContent = "Invalid: " + e.message;
+      }
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", ()=>{
+      try{
+        const obj = JSON.parse(el.value);
+        validateConfig(obj);
+        const blob = new Blob([JSON.stringify(obj, null, 2)], { type:"application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "config.json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+        msg.className = "note";
+        msg.textContent = "Downloaded config.json. Upload it to your repo at data/config.json.";
+      }catch(e){
+        msg.className = "note err";
+        msg.textContent = "Cannot download: " + e.message;
+      }
+    });
+
+    // Optional: auto-load after unlock (comment out if you prefer manual)
+    // loadCurrent();
+  </script>
+</body>
+</html>
