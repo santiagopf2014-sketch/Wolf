@@ -36,48 +36,6 @@
     --focus: 0 0 0 4px rgba(124,58,237,.18);
   }
 
-  /* Watermark everywhere */
-.wm{
-  position: relative;
-}
-.wm::after{
-  content: "WOLF. NOT FOR RESALE";
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  text-align: center;
-
-  font-weight: 1000;
-  letter-spacing: 6px;
-  line-height: 1.1;
-  font-size: clamp(16px, 4.2vw, 42px);
-
-  color: rgba(255,255,255,.60);
-  text-shadow: 0 8px 22px rgba(0,0,0,.35);
-  transform: rotate(-18deg);
-
-  pointer-events: none;
-  user-select: none;
-  mix-blend-mode: overlay;
-}
-
-.wm::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background: repeating-linear-gradient(
-    -18deg,
-    rgba(0,0,0,.08) 0px,
-    rgba(0,0,0,.08) 12px,
-    rgba(255,255,255,.08) 12px,
-    rgba(255,255,255,.08) 24px
-  );
-  opacity: .22;
-  pointer-events:none;
-}
-
-
     
   *{ box-sizing:border-box; }
   html,body{ height:100%; }
@@ -863,7 +821,7 @@ async function loadConfig(){
         const tagHTML = tags.slice(0,2).map(x => `<span class="tag">${escapeHTML(x)}</span>`).join("");
         return `
           <button class="card" type="button" onclick="go('#item/${encodeURIComponent(item.id)}')" aria-label="${escapeAttr(s("a11yItem"))}: ${escapeAttr(title)}">
-            <div class="thumb wm">
+            <div class="thumb">
               <img src="assets/images/${escapeAttr(item.image_filename)}" alt="${escapeAttr(title)}">
             </div>
             <div class="cardBody">
@@ -924,7 +882,7 @@ async function loadConfig(){
             </div>
 
             <div class="panelBody">
-              <div class="bigImg wm">
+              <div class="bigImg">
                 <img src="assets/images/${escapeAttr(item.image_filename)}" alt="${escapeAttr(title)}">
               </div>
 
